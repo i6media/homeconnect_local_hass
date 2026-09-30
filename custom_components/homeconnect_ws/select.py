@@ -95,6 +95,15 @@ class HCProgram(HCSelect):
         self._rev_programs = {value: key for key, value in self._programs.items()}
 
     @property
+    def available(self) -> bool:
+        # local patch: SelectedProgram is read-only on hoods (programs are startOnly),
+        # so ignore the access check and only require a connection
+        return bool(
+            self._runtime_data.coordinator.connected
+            or self._runtime_data.appliance.session.connected
+        )
+
+    @property
     def options(self) -> list[str] | None:
         return list(self._programs.values())
 
@@ -112,4 +121,6 @@ class HCProgram(HCSelect):
         if selected_program.execution in (Execution.SELECT_ONLY, Execution.SELECT_AND_START):
             await selected_program.select()
         elif selected_program.execution == Execution.START_ONLY:
-            await selected_program.start()
+            # local patch: don't send (null) option values, the appliance rejects
+            # them with 400 for startOnly programs (upstream #436/#437)
+            await selected_program.start(override_options=True)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from copy import deepcopy
@@ -81,6 +82,7 @@ class HomeConnectCoordinator(DataUpdateCoordinator):
             "Connecting to %s", self.config_entry.data[CONF_DESCRIPTION]["info"].get("vib")
         )
         first_failure = True
+        backoff = 5  # local patch: upstream loop has no sleep (#475)
         while self._connecting:
             try:
                 await self.appliance.connect()
@@ -105,6 +107,9 @@ class HomeConnectCoordinator(DataUpdateCoordinator):
                 await self.appliance.close()
                 msg = f"Can't connect to {self.config_entry.data[CONF_HOST]}"
                 self.logger.exception(msg)
+            if self._connecting:
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 60)
 
     async def _async_update_data(self) -> None:
         return None
