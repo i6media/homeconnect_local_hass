@@ -110,6 +110,10 @@ class HCFanEntityDescription(HCEntityDescription, FanEntityDescription, frozen_o
     """Description for Fan Entity."""
 
     available_access: tuple[Access] = (Access.READ_WRITE,)
+    # local patch: the fan follows this power state entity, when set
+    power_entity: str | None = None
+    # local patch: send the levels as options of this (startOnly) program, when set
+    program: str | None = None
 
 
 class EntityDescriptions(TypedDict):
